@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Mini Mercado Bacuri</title>
+  <style>
+    body{margin:0;font-family:Arial,Helvetica,sans-serif;background:#f5f7fb;color:#222}
+    header{background:#20b86b;color:white;padding:18px;text-align:center;font-size:22px;font-weight:bold}
+    main{max-width:1200px;margin:20px auto;padding:0 16px}
+    .layout{display:grid;grid-template-columns:1fr 320px;gap:20px}
+    @media(max-width:920px){.layout{grid-template-columns:1fr}}
+    .categories{display:grid;grid-template-columns:repeat(2,1fr);gap:12px;margin-bottom:20px}
+    .cat{background:white;padding:18px;text-align:center;border-radius:10px;cursor:pointer;box-shadow:0 6px 16px rgba(0,0,0,0.05);font-weight:600}
+    .cat:hover{transform:translateY(-3px)}
+    .products{display:grid;grid-template-columns:repeat(2,1fr);gap:12px;margin-bottom:20px}
+    .product{background:white;border-radius:10px;padding:14px;text-align:center;box-shadow:0 6px 16px rgba(0,0,0,0.04)}
+    .product img{width:100%;height:140px;object-fit:contain;margin-bottom:8px}
+    .name{color:black;font-weight:700;margin-bottom:6px}
+    .price{color:#0b76ff;font-weight:800;margin-bottom:8px}
+    .btn-plus{background:#0b76ff;color:white;border:none;border-radius:50%;width:36px;height:36px;font-size:18px;cursor:pointer}
+    .btn-plus:active{transform:scale(0.98)}
+    .cart{background:white;border-radius:10px;padding:14px;box-shadow:0 8px 20px rgba(0,0,0,0.05);position:sticky;top:20px}
+    .cart h3{margin-top:0}
+    .cart-list{display:flex;flex-direction:column;gap:8px;max-height:56vh;overflow:auto;padding-right:6px}
+    .cart-item{display:flex;justify-content:space-between;align-items:center;background:#fbfdff;padding:8px;border-radius:8px}
+    .cart-item .meta{flex:1;text-align:left}
+    .cart-item .meta .n{font-weight:700}
+    .cart-item .meta .p{color:#6c7a89;font-size:13px}
+    .qty-input{width:56px;padding:6px;border-radius:6px;border:1px solid #e2e8f0;text-align:center}
+    .subtotal{text-align:right;margin-top:12px}
+    .total{font-weight:800;font-size:18px}
+    .actions{display:flex;gap:8px;margin-top:12px}
+    .btn{padding:10px;border-radius:8px;border:none;cursor:pointer;font-weight:800;flex:1}
+    .btn-primary{background:#0b76ff;color:white}
+    .btn-danger{background:#e74c3c;color:white}
+    .overlay{position:fixed;inset:0;display:none;align-items:center;justify-content:center;background:rgba(0,0,0,0.45);z-index:99}
+    .modal{background:white;padding:18px;border-radius:12px;max-width:480px;text-align:center}
+    .modal img{max-width:100%;height:auto}
+    textarea{width:100%;height:90px;padding:8px;border-radius:8px;border:1px solid #e2e8f0}
+    .small{font-size:13px;color:#6c7a89;margin-top:8px}
+    button:focus{outline:none}
+  </style>
+</head>
+<body>
+  <header>Mini Mercado Bacuri 🛒</header>
+  <main>
+    <div class="layout">
+      <div>
+        <div id="viewCategories">
+          <h2>Escolha uma categoria</h2>
+          <div class="categories">
+            <div class="cat" onclick="openCategory('alimentos')">🥖 Alimentos Básicos e Grãos</div>
+            <div class="cat" onclick="openCategory('massas')">🍝 Massas, Molhos e Conservas</div>
+            <div class="cat" onclick="openCategory('bebidas')">☕ Café e Bebidas</div>
+            <div class="cat" onclick="openCategory('higiene')">🧴 Higiene e Limpeza</div>
+          </div>
+        </div>
+        <div id="viewProducts" style="display:none">
+          <div style="display:flex;justify-content:space-between;align-items:center;">
+            <h2 id="categoryTitle">Produtos</h2>
+            <button class="btn" onclick="backToCategories()">⬅ Voltar</button>
+          </div>
+          <div id="productsGrid" class="products"></div>
+        </div>
+      </div>
+      <aside class="cart">
+        <h3>🛒 Seu Carrinho</h3>
+        <div id="emptyMsg" class="small">Nenhum item adicionado. Clique no + para incluir.</div>
+        <div class="cart-list" id="cartList" style="display:none;"></div>
+        <div class="subtotal" id="subtotalRow" style="display:none;">
+          <div class="small">Total</div>
+          <div class="total" id="totalValue">R$ 0,00</div>
+        </div>
+        <div class="actions" id="actionsRow" style="display:none;">
+          <button class="btn btn-primary" onclick="startCheckout()">Finalizar (PIX)</button>
+          <button class="btn btn-danger" onclick="clearCart()">Esvaziar</button>
+        </div>
+        <div class="small" style="margin-top:10px;">
+          Após finalizar, um QR Code PIX será gerado (backend Mercado Pago).
+        </div>
+      </aside>
+    </div>
+  </main>
+
+  <div class="overlay" id="overlay">
+    <div class="modal">
+      <div id="modalContent"></div>
+      <div style="margin-top:12px;">
+        <button class="btn btn-primary" onclick="closeOverlay()">Fechar</button>
+      </div>
+    </div>
+  </div>  
+
+  <script type="module">
+    { PRODUCTS } from './produtos.js';
+
+    let cart = {};
+
+    function formatBR(v){ return "R$ " + v.toFixed(2).replace('.',','); }
+
+    function openCategory(cat){
+      document.getElementById('viewCategories').style.display = 'none';
+      document.getElementById('viewProducts').style.display = 'block';
+      document.getElementById('categoryTitle').innerText = {
+        alimentos: '🥖 Alimentos Básicos e Grãos',
+        massas: '🍝 Massas, Molhos e Conservas',
+        bebidas: '☕ Café e Bebidas',
+        higiene: '🧴 Higiene e Limpeza'
+      }[cat] || 'Produtos';
+      const grid = document.getElementById('productsGrid');
+      grid.innerHTML = '';
+      (PRODUCTS[cat] || []).forEach(p => {
+        const div = document.createElement('div');
+        div.className = 'product';
+        div.innerHTML = `
+          <img src="${p.imagem}" alt="${p.nome}">
+          <div class="name">${p.nome}</div>
+          <div class="price">${formatBR(p.preco)}</div>
+          <button class="btn-plus" onclick='addToCart("${p.id}")'>+</button>
+        `;
+        grid.appendChild(div);
+      });
+      renderCart();
+    }
+
+    function backToCategories(){
+      document.getElementById('viewProducts').style.display = 'none';
+      document.getElementById('viewCategories').style.display = 'block';
+    }
+
+    function addToCart(id){
+      for(const cat in PRODUCTS){
+        const prod = PRODUCTS[cat].find(x => x.id===id);
+        if(prod){
+          if(!cart[id]) cart[id] = { ...prod, qty: 0 };
+          cart[id].qty++;
+          showToast(`${prod.nome} (x${cart[id].qty})`);
+          renderCart();
+          return;
+        }
+      }
+    }
+
+    function renderCart(){
+      const cartList = document.getElementById('cartList');
+      const emptyMsg = document.getElementById('emptyMsg');
+      const subtotalRow = document.getElementById('subtotalRow');
+      const actionsRow = document.getElementById('actionsRow');
+      const items = Object.values(cart);
+      if(items.length === 0){
+        cartList.style.display = 'none';
+        emptyMsg.style.display = 'block';
+        subtotalRow.style.display = 'none';
+        actionsRow.style.display = 'none';
+        return;
+      }
+      cartList.style.display = 'flex';
+      emptyMsg.style.display = 'none';
+      subtotalRow.style.display = 'block';
+      actionsRow.style.display = 'flex';
+      cartList.innerHTML = '';
+      let total = 0;
+      items.forEach(item => {
+        const el = document.createElement('div');
+        el.className = 'cart-item';
+        el.innerHTML = `
+          <div class="meta"><div class="n">${item.nome}</div><div class="p">${formatBR(item.preco)}</div></div>
+          <div style="display:flex;flex-direction:column;align-items:flex-end;gap:6px">
+            <input class="qty-input" type="number" min="1" value="${item.qty}" onchange="updateQty('${item.id}',this.value)">
+            <div style="font-weight:800">${formatBR(item.preco * item.qty)}</div>
+          </div>
+        `;
+        cartList.appendChild(el);
+        total += item.preco * item.qty;
+      });
+      document.getElementById('totalValue').innerText = formatBR(total);
+    }
+
+    function updateQty(id, val){
+      const q = Math.max(1, parseInt(val)||1);
+      cart[id].qty = q;
+      renderCart();
+    }
+
+    function clearCart(){
+      if(confirm('Esvaziar carrinho?')) cart = {};
+      renderCart();
+    }
+
+    function openOverlay(html){
+      document.getElementById('modalContent').innerHTML = html;
+      document.getElementById('overlay').style.display = 'flex';
+    }
+
+    function closeOverlay(){
+      document.getElementById('overlay').style.display = 'none';
+    }
+
+    async function startCheckout(){
+      const items = Object.values(cart);
+      if(items.length===0){ alert('Carrinho vazio'); return; }
+      const total = items.reduce((s,i)=>s+i.preco*i.qty,0);
+      openOverlay('<div class="small">Gerando PIX...</div>');
+      // Aqui vai chamar o backend (Mercado Pago)
+      closeOverlay();
+    }
+
+    function showToast(msg){
+      const t = document.createElement('div');
+      t.style.position='fixed'; t.style.left='50%';
+      t.style.transform='translateX(-50%)';
+      t.style.bottom='28px'; t.style.background='rgba(0,0,0,0.8)';
+      t.style.color='white'; t.style.padding='10px 14px';
+      t.style.borderRadius='10px'; t.style.zIndex=999;
+      t.innerText = msg;
+      document.body.appendChild(t);
+      setTimeout(()=>t.remove(),1200);
+    }
+
+    renderCart();
+  </script>
+</body>
+</html>
