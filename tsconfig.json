@@ -1,12 +1,13 @@
 {
   "compilerOptions": {
-    "target": "ES2020",
-    "module": "CommonJS",
-    "moduleResolution": "node",
-    "outDir": "./dist",
-    "rootDir": ".",
+    "target": "ES2020",            // Versão do JS para compilar
+    "module": "commonjs",          // Para Node.js
+    "rootDir": "./",               // Pasta raiz dos .ts
+    "outDir": "./dist",            // Onde os arquivos .js serão gerados
+    "esModuleInterop": true,       // Para importar módulos CommonJS
+    "forceConsistentCasingInFileNames": true,
     "strict": true,
-    "esModuleInterop": true
+    "skipLibCheck": true
   },
-  "include": ["server.ts"]
+  "include": ["server.ts", "src/**/*.ts"]
 }
