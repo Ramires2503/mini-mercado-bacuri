@@ -1,14 +1,18 @@
 {
-  "name": "mini-mercado-backend",
+  "name": "mini-mercado-bacuri",
   "version": "1.0.0",
-  "type": "module",
+  "description": "Mini Mercado Bacuri - servidor em TypeScript",
+  "main": "dist/server.js",
   "scripts": {
-    "start": "node server.js"
+    "dev": "ts-node server.ts",
+    "build": "tsc",
+    "start": "node dist/server.js"
   },
   "dependencies": {
-    "cors": "^2.8.5",
-    "dotenv": "^16.0.3",
-    "express": "^4.18.2",
-    "node-fetch": "^3.3.2"
+    "express": "^4.19.2"
+  },
+  "devDependencies": {
+    "ts-node": "^10.9.2",
+    "typescript": "^5.4.5"
   }
 }
