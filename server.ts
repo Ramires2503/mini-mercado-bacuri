@@ -1,8 +1,8 @@
-// server.js
 import express from "express";
 import fetch from "node-fetch";
 import cors from "cors";
 import dotenv from "dotenv";
+import path from "path";
 
 dotenv.config();
 const app = express();
@@ -19,8 +19,6 @@ if(!MP_TOKEN) {
 
 /**
  * Cria pagamento PIX via Mercado Pago
- * Espera body: { total: number, referencia: string (opcional) }
- * Retorna: { qr_code_base64, qr_code, payment_id }
  */
 app.post("/pagar", async (req, res) => {
   try {
@@ -28,20 +26,17 @@ app.post("/pagar", async (req, res) => {
     const amount = parseFloat(total);
     if (!amount || amount <= 0) return res.status(400).json({ error: "Total inválido" });
 
-    // Monta payload para criar pagamento via PIX
     const payload = {
       transaction_amount: amount,
       description: referencia || "Compra Mini Mercado Bacuri",
       payment_method_id: "pix",
-      payer: {
-        email: "comprador@exemplo.com"
-      }
+      payer: { email: "comprador@exemplo.com" }
     };
 
     const mpRes = await fetch("https://api.mercadopago.com/v1/payments", {
       method: "POST",
       headers: {
-        "Authorization": `Bearer ${MP_TOKEN}`,
+        "Authorization": Bearer ${MP_TOKEN},
         "Content-Type": "application/json"
       },
       body: JSON.stringify(payload)
@@ -49,7 +44,6 @@ app.post("/pagar", async (req, res) => {
 
     const data = await mpRes.json();
 
-    // Erro da API
     if (!mpRes.ok) {
       console.error("MP error:", data);
       return res.status(500).json({ error: "Erro Mercado Pago", details: data });
@@ -74,27 +68,23 @@ app.post("/pagar", async (req, res) => {
 
 /**
  * Consulta status do pagamento Mercado Pago
- * GET /status/:payment_id
- * Retorna JSON com status (e.g. 'approved', 'pending', 'rejected')
  */
 app.get("/status/:payment_id", async (req, res) => {
   const payment_id = req.params.payment_id;
   if (!payment_id) return res.status(400).json({ error: "payment_id requerido" });
 
   try {
-    const mpRes = await fetch(`https://api.mercadopago.com/v1/payments/${payment_id}`, {
+    const mpRes = await fetch(https://api.mercadopago.com/v1/payments/${payment_id}, {
       method: "GET",
-      headers: { "Authorization": `Bearer ${MP_TOKEN}` }
+      headers: { "Authorization": Bearer ${MP_TOKEN} }
     });
     const data = await mpRes.json();
     if (!mpRes.ok) {
       return res.status(500).json({ error: "Erro Mercado Pago", details: data });
     }
 
-    // status: "approved", "pending" etc.
     res.json({ status: data.status, id: data.id, data });
     
-    // opcional: se aprovado, notificar ESP32
     if (data.status === "approved" && ESP32_NOTIFY_URL) {
       try {
         await fetch(ESP32_NOTIFY_URL, {
@@ -114,5 +104,15 @@ app.get("/status/:payment_id", async (req, res) => {
   }
 });
 
+/**
+ * NOVO: Servir a página public_index.html
+ */
+const publicPath = path.join(__dirname, ".");
+app.use(express.static(publicPath));
+
+app.get("/", (req, res) => {
+  res.sendFile(path.join(publicPath, "public_index.html"));
+});
+
 const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => console.log(`Server rodando na porta ${PORT}`));
+app.listen(PORT, () => console.log(✅ Server rodando em http://localhost:${PORT}));
