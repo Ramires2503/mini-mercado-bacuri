@@ -121,3 +121,64 @@ app.post("/pagar", async (req, res) => {
     res.status(500).json({ error: "Erro interno" });
   }
 });
+// --------------------------------------------------
+// Rota para consultar status do pagamento Mercado Pago
+// --------------------------------------------------
+app.get("/status/:payment_id", async (req, res) => {
+  const payment_id = req.params.payment_id;
+  if (!payment_id)
+    return res.status(400).json({ error: "payment_id requerido" });
+
+  try {
+    const mpRes = await fetch(
+      https://api.mercadopago.com/v1/payments/${payment_id},
+      {
+        method: "GET",
+        headers: { "Authorization": Bearer ${MP_TOKEN} }
+      }
+    );
+
+    const data = await mpRes.json();
+    if (!mpRes.ok) {
+      return res.status(500).json({ error: "Erro Mercado Pago", details: data });
+    }
+
+    res.json({ status: data.status, id: data.id, data });
+
+    // Notifica ESP32 se estiver configurado
+    if (data.status === "approved" && ESP32_NOTIFY_URL) {
+      try {
+        await fetch(ESP32_NOTIFY_URL, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ payment_id: data.id, status: data.status })
+        });
+        console.log("Notificado ESP32:", ESP32_NOTIFY_URL);
+      } catch (e: any) {
+        console.warn("Falha ao notificar ESP32:", e.message);
+      }
+    }
+
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Erro interno" });
+  }
+});
+
+// --------------------------------------------------
+// Servir a página HTML e arquivos estáticos
+// --------------------------------------------------
+const publicPath = path.join(__dirname, ".");
+app.use(express.static(publicPath));
+
+app.get("/", (req, res) => {
+  res.sendFile(path.join(publicPath, "public_index.html"));
+});
+
+// --------------------------------------------------
+// Inicializa servidor
+// --------------------------------------------------
+const PORT = process.env.PORT || 3000;
+app.listen(PORT, () =>
+  console.log(✅ Server rodando em http://localhost:${PORT})
+);
