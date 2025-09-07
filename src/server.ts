@@ -6,16 +6,36 @@ import path from "path";
 
 dotenv.config();
 const app = express();
-app.use(cors());
+
+// Configura CORS só para seu domínio autorizado
+app.use(cors({
+  origin: ["https://seusite.com"], // troca pelo domínio do seu frontend
+}));
+
 app.use(express.json());
 
-const MP_TOKEN = process.env.MP_TOKEN; // Access Token do Mercado Pago
-const ESP32_NOTIFY_URL = process.env.ESP32_NOTIFY_URL || ""; // opcional: URL do ESP32
+const MP_TOKEN = process.env.MP_TOKEN; // Token Mercado Pago no .env
+const ESP32_NOTIFY_URL = process.env.ESP32_NOTIFY_URL || ""; // URL do ESP32 opcional
+const API_KEY = process.env.API_KEY; // Sua chave secreta para acessar a API
 
 if (!MP_TOKEN) {
   console.error("ERRO: configure MP_TOKEN no .env");
   process.exit(1);
 }
+
+if (!API_KEY) {
+  console.error("ERRO: configure API_KEY no .env");
+  process.exit(1);
+}
+
+// Middleware para checar API Key na requisição
+app.use((req, res, next) => {
+  const key = req.headers['x-api-key'];
+  if (!key || key !== API_KEY) {
+    return res.status(403).json({ error: "Acesso negado: chave inválida" });
+  }
+  next();
+});
 
 /**
  * Cria pagamento PIX via Mercado Pago
