@@ -9,10 +9,10 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-const MP_TOKEN = process.env.MP_TOKEN; // Access Token do Mercado Pago (produção)
-const ESP32_NOTIFY_URL = process.env.ESP32_NOTIFY_URL || ""; // opcional: URL do ESP32 para notificação POST
+const MP_TOKEN = process.env.MP_TOKEN; // Access Token do Mercado Pago
+const ESP32_NOTIFY_URL = process.env.ESP32_NOTIFY_URL || ""; // opcional: URL do ESP32
 
-if(!MP_TOKEN) {
+if (!MP_TOKEN) {
   console.error("ERRO: configure MP_TOKEN no .env");
   process.exit(1);
 }
@@ -24,7 +24,8 @@ app.post("/pagar", async (req, res) => {
   try {
     const { total, referencia } = req.body;
     const amount = parseFloat(total);
-    if (!amount || amount <= 0) return res.status(400).json({ error: "Total inválido" });
+    if (!amount || amount <= 0)
+      return res.status(400).json({ error: "Total inválido" });
 
     const payload = {
       transaction_amount: amount,
@@ -36,7 +37,7 @@ app.post("/pagar", async (req, res) => {
     const mpRes = await fetch("https://api.mercadopago.com/v1/payments", {
       method: "POST",
       headers: {
-        "Authorization": Bearer ${MP_TOKEN},
+        "Authorization": `Bearer ${MP_TOKEN}`,
         "Content-Type": "application/json"
       },
       body: JSON.stringify(payload)
@@ -71,20 +72,25 @@ app.post("/pagar", async (req, res) => {
  */
 app.get("/status/:payment_id", async (req, res) => {
   const payment_id = req.params.payment_id;
-  if (!payment_id) return res.status(400).json({ error: "payment_id requerido" });
+  if (!payment_id)
+    return res.status(400).json({ error: "payment_id requerido" });
 
   try {
-    const mpRes = await fetch(https://api.mercadopago.com/v1/payments/${payment_id}, {
-      method: "GET",
-      headers: { "Authorization": Bearer ${MP_TOKEN} }
-    });
+    const mpRes = await fetch(
+      `https://api.mercadopago.com/v1/payments/${payment_id}`,
+      {
+        method: "GET",
+        headers: { "Authorization": `Bearer ${MP_TOKEN}` }
+      }
+    );
+
     const data = await mpRes.json();
     if (!mpRes.ok) {
       return res.status(500).json({ error: "Erro Mercado Pago", details: data });
     }
 
     res.json({ status: data.status, id: data.id, data });
-    
+
     if (data.status === "approved" && ESP32_NOTIFY_URL) {
       try {
         await fetch(ESP32_NOTIFY_URL, {
@@ -93,7 +99,7 @@ app.get("/status/:payment_id", async (req, res) => {
           body: JSON.stringify({ payment_id: data.id, status: data.status })
         });
         console.log("Notificado ESP32:", ESP32_NOTIFY_URL);
-      } catch(e) {
+      } catch (e: any) {
         console.warn("Falha ao notificar ESP32:", e.message);
       }
     }
@@ -105,7 +111,7 @@ app.get("/status/:payment_id", async (req, res) => {
 });
 
 /**
- * NOVO: Servir a página public_index.html
+ * Servir a página public_index.html
  */
 const publicPath = path.join(__dirname, ".");
 app.use(express.static(publicPath));
@@ -115,4 +121,6 @@ app.get("/", (req, res) => {
 });
 
 const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => console.log(✅ Server rodando em http://localhost:${PORT}));
+app.listen(PORT, () =>
+  console.log(`✅ Server rodando em http://localhost:${PORT}`)
+);
