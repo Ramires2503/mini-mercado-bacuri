@@ -9,17 +9,30 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-const MP_TOKEN = process.env.MP_TOKEN; // Access Token do Mercado Pago
-const ESP32_NOTIFY_URL = process.env.ESP32_NOTIFY_URL || ""; // opcional: URL do ESP32
+const MP_TOKEN = process.env.MP_TOKEN;
+const ESP32_NOTIFY_URL = process.env.ESP32_NOTIFY_URL || "";
 
 if (!MP_TOKEN) {
   console.error("ERRO: configure MP_TOKEN no .env");
   process.exit(1);
 }
 
-/**
- * Cria pagamento PIX via Mercado Pago
- */
+interface MercadoPagoTransactionData {
+  qr_code_base64: string;
+  qr_code: string;
+}
+
+interface MercadoPagoPointOfInteraction {
+  transaction_data?: MercadoPagoTransactionData;
+}
+
+interface MercadoPagoResponse {
+  id: number;
+  status?: string;
+  point_of_interaction?: MercadoPagoPointOfInteraction;
+  // Outros campos que precisar
+}
+
 app.post("/pagar", async (req, res) => {
   try {
     const { total, referencia } = req.body;
@@ -43,7 +56,7 @@ app.post("/pagar", async (req, res) => {
       body: JSON.stringify(payload)
     });
 
-    const data = await mpRes.json();
+    const data = (await mpRes.json()) as MercadoPagoResponse;
 
     if (!mpRes.ok) {
       console.error("MP error:", data);
@@ -67,9 +80,6 @@ app.post("/pagar", async (req, res) => {
   }
 });
 
-/**
- * Consulta status do pagamento Mercado Pago
- */
 app.get("/status/:payment_id", async (req, res) => {
   const payment_id = req.params.payment_id;
   if (!payment_id)
@@ -84,7 +94,8 @@ app.get("/status/:payment_id", async (req, res) => {
       }
     );
 
-    const data = await mpRes.json();
+    const data = (await mpRes.json()) as MercadoPagoResponse;
+
     if (!mpRes.ok) {
       return res.status(500).json({ error: "Erro Mercado Pago", details: data });
     }
@@ -110,9 +121,6 @@ app.get("/status/:payment_id", async (req, res) => {
   }
 });
 
-/**
- * Servir a página public_index.html
- */
 const publicPath = path.join(__dirname, ".");
 app.use(express.static(publicPath));
 
