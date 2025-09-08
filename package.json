@@ -1,12 +1,12 @@
 {
   "name": "mini-mercado-bacuri",
   "version": "1.0.0",
+  "type": "module",
   "main": "dist/server.js",
-  "type": "commonjs",
   "scripts": {
-    "dev": "ts-node src/server.ts",
     "build": "tsc",
-    "start": "node dist/server.js"
+    "start": "node dist/server.js",
+    "dev": "ts-node src/server.ts"
   },
   "dependencies": {
     "cors": "^2.8.5",
@@ -17,8 +17,8 @@
   "devDependencies": {
     "@types/cors": "^2.8.17",
     "@types/express": "^4.17.21",
-    "@types/node": "^20.8.10",
+    "@types/node": "^20.6.1",
     "ts-node": "^10.9.1",
-    "typescript": "^5.1.6"
+    "typescript": "^5.3.0"
   }
 }
