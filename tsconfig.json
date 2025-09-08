@@ -1,13 +1,14 @@
 {
   "compilerOptions": {
-    "target": "ES2020",
-    "module": "CommonJS",
-    "outDir": "dist",
-    "strict": true,
-    "esModuleInterop": true,
-    "moduleResolution": "node",
+    "target": "ES2020",             // Código gerado compatível com Node 22
+    "module": "CommonJS",           // Padrão de módulos usado no Node
+    "rootDir": "./",                // Compila tudo a partir da raiz do projeto
+    "outDir": "./dist",             // Gera arquivos JS dentro de /dist
+    "strict": true,                 // Ativa checagens mais rígidas do TS
+    "esModuleInterop": true,        // Permite import default de libs CommonJS
     "resolveJsonModule": true,
-    "forceConsistentCasingInFileNames": true
+    "skipLibCheck": true
   },
-  "include": ["src/**/*"]
+  "include": ["./**/*.ts"],         // Inclui todos os .ts do projeto
+  "exclude": ["node_modules", "dist"]
 }
