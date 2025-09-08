@@ -8,12 +8,14 @@ import fs from "fs";
 dotenv.config();
 const app = express();
 
+// ==================== CONFIGURA CORS ====================
 app.use(cors({
-  origin: ["https://seusite.com"], // troque pelo domínio do seu frontend
+  origin: ["https://seusite.com"], // ⚠️ Substitua pelo domínio do seu frontend
 }));
 
 app.use(express.json());
 
+// ==================== VARIÁVEIS DE AMBIENTE ====================
 const MP_TOKEN = process.env.MP_TOKEN;
 const ESP32_NOTIFY_URL = process.env.ESP32_NOTIFY_URL || "";
 const API_KEY = process.env.API_KEY;
@@ -28,7 +30,7 @@ if (!API_KEY) {
   process.exit(1);
 }
 
-// Middleware de autenticação
+// ==================== MIDDLEWARE DE AUTENTICAÇÃO ====================
 app.use((req, res, next) => {
   const key = req.headers['x-api-key'];
   if (!key || key !== API_KEY) {
@@ -37,7 +39,7 @@ app.use((req, res, next) => {
   next();
 });
 
-// Carrega produtos
+// ==================== TIPAGEM DOS PRODUTOS ====================
 interface Produto {
   id: string;
   nome: string;
@@ -45,11 +47,12 @@ interface Produto {
   imagem: string;
 }
 
+// ==================== CARREGA PRODUTOS ====================
 const PRODUCTS_PATH = path.join(__dirname, "produtos.json");
 const rawData = fs.readFileSync(PRODUCTS_PATH, "utf-8");
 const PRODUCTS: Record<string, Produto[]> = JSON.parse(rawData);
 
-// ------------------------ PAGAMENTO PIX ------------------------
+// ==================== PAGAMENTO PIX ====================
 app.post("/pagar", async (req, res) => {
   try {
     const { items, total: totalEnviado, referencia } = req.body;
@@ -58,6 +61,7 @@ app.post("/pagar", async (req, res) => {
       return res.status(400).json({ error: "Itens inválidos" });
     }
 
+    // Calcula total real baseado nos produtos do servidor
     let totalCalculado = 0;
     for (const item of items) {
       let produto: Produto | undefined;
@@ -75,6 +79,7 @@ app.post("/pagar", async (req, res) => {
       return res.status(400).json({ error: "Total não confere com os produtos" });
     }
 
+    // Monta payload Mercado Pago
     const payload = {
       transaction_amount: totalCalculado,
       description: referencia || "Compra Mini Mercado Bacuri",
@@ -91,7 +96,7 @@ app.post("/pagar", async (req, res) => {
       body: JSON.stringify(payload)
     });
 
-    const data: any = await mpRes.json(); // 👈 resolvendo TS18046
+    const data: any = await mpRes.json(); // ✅ TypeScript: evita TS18046
 
     if (!mpRes.ok) {
       console.error("MP error:", data);
@@ -115,7 +120,7 @@ app.post("/pagar", async (req, res) => {
   }
 });
 
-// ------------------------ CONSULTA STATUS ------------------------
+// ==================== CONSULTA STATUS DO PAGAMENTO ====================
 app.get("/status/:payment_id", async (req, res) => {
   const payment_id = req.params.payment_id;
   if (!payment_id)
@@ -130,7 +135,7 @@ app.get("/status/:payment_id", async (req, res) => {
       }
     );
 
-    const data: any = await mpRes.json(); // 👈 resolvendo TS18046
+    const data: any = await mpRes.json(); // ✅ TypeScript: evita TS18046
 
     if (!mpRes.ok) {
       return res.status(500).json({ error: "Erro Mercado Pago", details: data });
@@ -138,6 +143,7 @@ app.get("/status/:payment_id", async (req, res) => {
 
     res.json({ status: data.status, id: data.id, data });
 
+    // Notifica ESP32 se configurado
     if (data.status === "approved" && ESP32_NOTIFY_URL) {
       try {
         await fetch(ESP32_NOTIFY_URL, {
@@ -157,7 +163,7 @@ app.get("/status/:payment_id", async (req, res) => {
   }
 });
 
-// ------------------------ FRONTEND ------------------------
+// ==================== FRONTEND ====================
 const publicPath = path.join(__dirname, ".");
 app.use(express.static(publicPath));
 
@@ -165,6 +171,7 @@ app.get("/", (req, res) => {
   res.sendFile(path.join(publicPath, "public_index.html"));
 });
 
+// ==================== INICIALIZA SERVIDOR ====================
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () =>
   console.log(`✅ Server rodando em http://localhost:${PORT}`)
