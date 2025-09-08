@@ -28,6 +28,7 @@ if (!API_KEY) {
   process.exit(1);
 }
 
+// Middleware de autenticação
 app.use((req, res, next) => {
   const key = req.headers['x-api-key'];
   if (!key || key !== API_KEY) {
@@ -36,6 +37,7 @@ app.use((req, res, next) => {
   next();
 });
 
+// Carrega produtos
 interface Produto {
   id: string;
   nome: string;
@@ -47,6 +49,7 @@ const PRODUCTS_PATH = path.join(__dirname, "produtos.json");
 const rawData = fs.readFileSync(PRODUCTS_PATH, "utf-8");
 const PRODUCTS: Record<string, Produto[]> = JSON.parse(rawData);
 
+// ------------------------ PAGAMENTO PIX ------------------------
 app.post("/pagar", async (req, res) => {
   try {
     const { items, total: totalEnviado, referencia } = req.body;
@@ -88,7 +91,7 @@ app.post("/pagar", async (req, res) => {
       body: JSON.stringify(payload)
     });
 
-    const data = await mpRes.json();
+    const data: any = await mpRes.json(); // 👈 resolvendo TS18046
 
     if (!mpRes.ok) {
       console.error("MP error:", data);
@@ -112,6 +115,7 @@ app.post("/pagar", async (req, res) => {
   }
 });
 
+// ------------------------ CONSULTA STATUS ------------------------
 app.get("/status/:payment_id", async (req, res) => {
   const payment_id = req.params.payment_id;
   if (!payment_id)
@@ -126,7 +130,8 @@ app.get("/status/:payment_id", async (req, res) => {
       }
     );
 
-    const data = await mpRes.json();
+    const data: any = await mpRes.json(); // 👈 resolvendo TS18046
+
     if (!mpRes.ok) {
       return res.status(500).json({ error: "Erro Mercado Pago", details: data });
     }
@@ -152,6 +157,7 @@ app.get("/status/:payment_id", async (req, res) => {
   }
 });
 
+// ------------------------ FRONTEND ------------------------
 const publicPath = path.join(__dirname, ".");
 app.use(express.static(publicPath));
 
