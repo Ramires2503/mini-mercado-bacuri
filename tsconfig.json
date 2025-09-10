@@ -1,15 +1,16 @@
 {
   "compilerOptions": {
-    "target": "ES2020",             // Gera código compatível com Node.js moderno
-    "module": "CommonJS",           // Usa CommonJS para rodar no Node
-    "outDir": "dist",               // Saída da compilação
-    "rootDir": "src",               // Pasta onde está o código TS
-    "strict": true,                 // Ativa todas as verificações de tipo
-    "esModuleInterop": true,        // Permite importar libs com sintaxe "import x from"
-    "moduleResolution": "node",     // Resolve módulos no padrão do Node.js
-    "resolveJsonModule": true,      // Permite importar arquivos JSON
+    "target": "ES2020",
+    "module": "CommonJS",
+    "outDir": "dist",
+    "rootDir": "src",
+    "strict": true,
+    "esModuleInterop": true,
+    "moduleResolution": "node",
+    "resolveJsonModule": true,
     "forceConsistentCasingInFileNames": true,
-    "skipLibCheck": true            // Ignora checagem de tipos das libs (evita erros chatos)
+    "skipLibCheck": true,
+    "types": ["node"] // garante que process, __dirname e path funcionem
   },
   "include": ["src/**/*"]
 }
