@@ -1,6 +1,7 @@
 {
   "name": "mini-mercado-bacuri",
   "version": "1.0.0",
+  "description": "API e site do Mini Mercado Bacuri",
   "main": "dist/server.js",
   "type": "commonjs",
   "scripts": {
@@ -9,17 +10,17 @@
     "dev": "ts-node src/server.ts"
   },
   "dependencies": {
-    "cors": "^2.8.5",
-    "dotenv": "^16.3.1",
     "express": "^4.19.2",
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.5",
     "node-fetch": "^3.3.2"
   },
   "devDependencies": {
-    "@types/node": "^22.5.4",
+    "@types/node": "^22.5.0",
     "@types/express": "^4.17.21",
     "@types/cors": "^2.8.17",
-    "@types/node-fetch": "^3.0.3",
-    "typescript": "^5.4.0",
-    "ts-node": "^10.9.1"
+    "@types/node-fetch": "^2.6.4",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.5.4"
   }
 }
